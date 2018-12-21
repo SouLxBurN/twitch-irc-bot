@@ -19,7 +19,7 @@ function ignoreuser(target, context, messageFunction, params) {
 		messageFunction(
 			target,
 			context,
-			`@${context.username} only moderators are allowed to use this command`
+			`@${context.username} only moderators are allowed to use this command.`
 		);
 	}
 }

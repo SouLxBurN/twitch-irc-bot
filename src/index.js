@@ -7,7 +7,8 @@ const points = require('./commands/points');
 const leaderboard = require('./commands/leaderboard');
 const roll = require('./commands/roll');
 const ignoreuser = require('./commands/ignoreuser');
-const knownCommands = { roll, points, leaderboard, ignoreuser };
+const givepoints = require('./commands/givepoints');
+const knownCommands = { roll, points, leaderboard, ignoreuser, givepoints };
 
 const opts = {
 	identity: {
@@ -79,16 +80,16 @@ function onMessageHandler(target, context, msg, self) {
 	}
 
 	createUserIfNotExists(context.username);
-	if (!activeUsers.includes(context.username))
+	if (!activeUsers.includes(context.username)) {
 		activeUsers.push(context.username);
-
-	if (notACommand(msg)) {
-		console.log(
-			`[${target} (${context['message-type']})] ${context.username}: ${msg}`
-		);
-		return;
 	}
 
+	console.log(`[${target} (${context['message-type']})] ${context.username}: ${msg}`);
+
+	if (notACommand(msg)) {
+		return;
+	}
+	
 	const parse = msg.slice(1).split(' ');
 	const commandName = parse[0].toLowerCase();
 	const params = parse.splice(1);

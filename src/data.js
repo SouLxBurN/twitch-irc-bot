@@ -20,6 +20,7 @@ module.exports = {
 		if (!this.state.ignoredUsers.includes(lowcasedName)) {
 			this.state.ignoredUsers.push(lowcasedName);
 		}
+		this.writeToStateToFile();
 		return true;
 	},
 

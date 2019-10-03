@@ -4,6 +4,14 @@ const dataFile = 'data.json';
 module.exports = {
 	state: JSON.parse(fs.readFileSync(dataFile)),
 
+	createUserIfNotExists(username) {
+		if (!this.state.players[username]) {
+			this.createUser(username);
+			return true;
+		}
+		return false;
+	},
+
 	writeToStateToFile() {
 		fs.writeFile(dataFile, JSON.stringify(this.state), function(err) {
 			if (err) {
@@ -20,7 +28,6 @@ module.exports = {
 		if (!this.state.ignoredUsers.includes(lowcasedName)) {
 			this.state.ignoredUsers.push(lowcasedName);
 		}
-		this.writeToStateToFile();
 		return true;
 	},
 
@@ -28,11 +35,10 @@ module.exports = {
 		this.state.players[username] = {
 			points: 5
 		};
-		this.writeToStateToFile();
 	},
 
 	updatePoints(user, points) {
+		this.createUserIfNotExists(user);
 		this.state.players[user].points += parseInt(points);
-		this.writeToStateToFile();
 	}
 };

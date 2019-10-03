@@ -10,6 +10,23 @@ const data = require('../data');
 function roll(target, context, messageFunction, params) {
 	const points = data.state.players[context.username].points;
 	let bet = Number(params[0]);
+	
+	if (bet === 0) {
+		messageFunction(
+			target,
+			context,
+			`${
+				context.username
+			}, Congratulations! You Won NOTHING`
+		);
+		return;
+	}
+
+	// If no bet is specified, assume its 1.
+	if (!bet) {
+		bet = 1;
+	}
+
 	if (isNaN(bet)) {
 		messageFunction(
 			target,
@@ -18,18 +35,25 @@ function roll(target, context, messageFunction, params) {
 		);
 		return;
 	}
-	// If no bet is specified, assume its ALL IN.
-	if (!bet) {
-		bet = 1;
-	}
 
-	if (bet > points || bet === 0) {
+	if (points === 0) {
 		messageFunction(
 			target,
 			context,
 			`${
 				context.username
-			}, you have ${points} points, and no I won't loan any points to you`
+			}, you have 0 points. Looks like you should hang around and earn some!`
+		);
+		return;
+	}
+
+	if (bet > points) {
+		messageFunction(
+			target,
+			context,
+			`${
+				context.username
+			}, you have ${points} points, thats not enough`
 		);
 		return;
 	}

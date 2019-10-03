@@ -1,6 +1,7 @@
 const tmi = require('tmi.js');
 const schedule = require('node-schedule');
-const data = require('./data');
+const dataStore = require('./data');
+const axios = require('axios');
 
 // Command initialization
 const points = require('./commands/points');
@@ -19,7 +20,6 @@ const opts = {
 };
 
 const commandPrefix = '!';
-var activeUsers = [];
 
 function sendMessage(target, context, message) {
 	if (context['message-type'] === 'whisper') {
@@ -29,19 +29,13 @@ function sendMessage(target, context, message) {
 	}
 }
 
-function createUserIfNotExists(username) {
-	if (!data.state.players[username]) {
-		data.createUser(username);
-	}
-}
-
 ////////////////////////
 // Client Initialization
 const client = new tmi.client(opts);
 client.on('message', onMessageHandler);
 client.on('connected', onConnectedHandler);
 client.on('disconnected', onDisconnectedHandler);
-client.on('cheer', onCheerHandler);
+// client.on('cheer', onCheerHandler);
 client.connect();
 ////////////////////////
 
@@ -54,13 +48,13 @@ client.connect();
 function onCheerHandler(target, context, msg) {
 	const username = context.username;
 	const bits = context.bits;
-	createUserIfNotExists();
+	dataStore.createUserIfNotExists(username);
 	sendMessage(
 		target,
 		context,
 		`${username} has earned ${bits} points for giving bits!`
 	);
-	data.updatePoints(username, bits);
+	dataStore.updatePoints(username, bits);
 }
 
 /**
@@ -71,19 +65,6 @@ function onCheerHandler(target, context, msg) {
  * @param {*} self
  */
 function onMessageHandler(target, context, msg, self) {
-	// If its yourself or an ignored username i.e. NightBot. Skip the message.
-	if (self || data.state.ignoredUsers.includes(context.username)) {
-		console.log(
-			`[${target} (${context['message-type']})] ${context.username}: ${msg}`
-		);
-		return;
-	}
-
-	createUserIfNotExists(context.username);
-	if (!activeUsers.includes(context.username)) {
-		activeUsers.push(context.username);
-	}
-
 	console.log(`[${target} (${context['message-type']})] ${context.username}: ${msg}`);
 
 	if (notACommand(msg)) {
@@ -123,16 +104,41 @@ function onConnectedHandler(addr, port) {
  */
 function onDisconnectedHandler(reason) {
 	console.log(`Disconnected: ${reason}`);
+	dataStore.writeToStateToFile();
 	process.exit(1);
 }
 
-schedule.scheduleJob('*/15 * * * *', () => {
-	activeUsers.forEach(user => {
-		if (data.state.players[user]) {
-			data.state.players[user].points += 1;
+schedule.scheduleJob('*/10 * * * *', async () => {
+	// TODO This could really be refactored.
+	try {
+		const response = await axios.get(
+			`https://api.twitch.tv/helix/streams?user_login=${opts.channels[0].substr(1)}`,
+			{
+				headers : {
+					'Authorization' : `Bearer ${opts.identity.password.substr(6)}`
+				}
+			});
+		if (response.data.data.length > 0) {
+			const { data } = await axios.get(`http://tmi.twitch.tv/group/user/${opts.channels[0].substr(1)}/chatters`);
+			const currentViewers = []
+				.concat(data.chatters.viewers)
+				.concat(data.chatters.broadcaster)
+				.concat(data.chatters.moderators)
+				.concat(data.chatters.vips);
+			currentViewers.forEach(user => {
+				if (!dataStore.state.ignoredUsers.includes(user) && !dataStore.createUserIfNotExists(user)) {
+					if (dataStore.state.players[user]) {
+						dataStore.state.players[user].points += 5;
+					}
+				}
+			});
+			console.log('Updated players scores!');
 		}
-	});
-	activeUsers = [];
-	console.log('Updated players scores!');
-	data.writeToStateToFile();
+	} catch(err) {
+		console.error('Error encountered when fetching list of viewers', err);
+	}
+});
+
+schedule.scheduleJob('*/5 * * * * *', () => {
+	dataStore.writeToStateToFile();
 });

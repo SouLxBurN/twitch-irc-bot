@@ -15,7 +15,18 @@ module.exports = {
 	writeToStateToFile() {
 		fs.writeFile(dataFile, JSON.stringify(this.state), function(err) {
 			if (err) {
-				console.log(err);
+				console.error(err);
+				return;
+			}
+		});
+	},
+
+	writeBackupStateToFile() {
+		let today = new Date();
+		let backupName = `data${today.getFullYear()}${today.getMonth()}${today.getDay()}${today.getHours()}${today.getMinutes()}${today.getSeconds()}.json`;
+		fs.writeFile(backupName, JSON.stringify(this.state), function(err) {
+			if (err) {
+				console.error(err);
 				return;
 			}
 		});
@@ -35,10 +46,27 @@ module.exports = {
 		this.state.players[username] = {
 			points: 5
 		};
+		return true;
 	},
 
-	updatePoints(user, points) {
-		this.createUserIfNotExists(user);
-		this.state.players[user].points += parseInt(points);
+	updatePoints(username, points) {
+		if (!username || !this.userExists(username)) { return false; }
+		const lowcasedName = username.toLowerCase();
+		this.state.players[lowcasedName].points += parseInt(points);
+		return true;
+	},
+
+	userExists(username) {
+		const lowcasedName = username.toLowerCase();
+		if (this.state.players[lowcasedName]) {
+			return true;
+		}
+		return false;
+	},
+
+	wipePlayers() {
+		this.writeBackupStateToFile();
+		this.state.players = {};
+		this.writeToStateToFile();
 	}
 };

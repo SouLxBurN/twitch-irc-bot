@@ -9,7 +9,8 @@ const leaderboard = require('./commands/leaderboard');
 const roll = require('./commands/roll');
 const ignoreuser = require('./commands/ignoreuser');
 const givepoints = require('./commands/givepoints');
-const knownCommands = { roll, points, leaderboard, ignoreuser, givepoints };
+const wipeplayers = require('./commands/wipeplayers');
+const knownCommands = { roll, points, leaderboard, ignoreuser, givepoints, wipeplayers };
 
 const opts = {
 	identity: {
@@ -66,7 +67,10 @@ function onCheerHandler(target, context, msg) {
  */
 function onMessageHandler(target, context, msg, self) {
 	console.log(`[${target} (${context['message-type']})] ${context.username}: ${msg}`);
-
+	if (dataStore.state.ignoredUsers.includes(context.username)) {
+		return;
+	}
+	dataStore.createUserIfNotExists(context.username);
 	if (notACommand(msg)) {
 		return;
 	}

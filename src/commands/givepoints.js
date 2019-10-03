@@ -10,24 +10,31 @@ const data = require('../data');
 function givepoints(target, context, messageFunction, params) {
 	if (context.mod || context.badges.broadcaster) {
 		if (params.length === 2 && params[0] && params[1]) {
-			data.updatePoints(params[0], params[1]);
-			messageFunction(
-				target,
-				context,
-				`@${context.username} has given ${params[1]} points to @${params[0]}.`
-			);
+			if (data.updatePoints(params[0], params[1])) {
+				messageFunction(
+					target,
+					context,
+					`${context.username} has given ${params[1]} points to ${params[0]}.`
+				);
+			} else {
+				messageFunction(
+					target,
+					context,
+					`${context.username}, ${params[0]} does not exist, or is ignored.`
+				);
+			}
 		} else {
 			messageFunction(
 				target,
 				context,
-				`@${context.username} This command requires 2 parameters !givepoints {user} {points}.`
+				`${context.username} This command requires 2 parameters !givepoints {user} {points}.`
 			);
 		}
 	} else {
 		messageFunction(
 			target,
 			context,
-			`@${context.username} only moderators are allowed to use this command.`
+			`${context.username} only moderators are allowed to use this command.`
 		);
 	}
 }

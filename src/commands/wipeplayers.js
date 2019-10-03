@@ -5,15 +5,14 @@ const data = require('../data');
  * @param {Object} target - Target channel information
  * @param {Object} context - Twitch event context
  * @param {function(target, context, string)} messageFunction - function for sending messages to the channel.
- * @param {string[]} params - Array of command parameters
  */
-function ignoreuser(target, context, messageFunction, params) {
+function ignoreuser(target, context, messageFunction) {
 	if (context.mod || context.badges.broadcaster) {
-		data.ignoreUser(params[0]);
+		data.wipePlayers();
 		messageFunction(
 			target,
 			context,
-			`${params[0]} is now on the ignored list and will not accumulate points.`
+			'All players and their points have been wiped'
 		);
 	} else {
 		messageFunction(
